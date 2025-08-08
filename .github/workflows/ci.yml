@@ -1,0 +1,86 @@
+name: SAI_UNICORNIO CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v3
+      - name: Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt || true
+      - name: Test alertas Telegram (flujo completo)
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          # Inyectar credenciales en config.json si es necesario
+          python -c "import json; f='sai_ultra_pro/config/config.json'; d=json.load(open(f)); d['api_keys']['TELEGRAM_BOT_TOKEN']='${{ secrets.TELEGRAM_BOT_TOKEN }}'; d['api_keys']['TELEGRAM_CHAT_ID']='${{ secrets.TELEGRAM_CHAT_ID }}'; json.dump(d, open(f,'w'), indent=2)"
+          python -u tests/test_alertas_telegram.py
+      - name: Test imports principales
+        run: |
+          python -u tests/test_imports.py
+      - name: Test funcional de ciclo de trading
+        run: |
+          python -u tests/test_funcional_ciclo.py
+      - name: Test de cobertura de errores
+        run: |
+          python -u tests/test_errores.py
+      - name: Instalar coverage
+        run: |
+          pip install coverage
+      - name: Ejecutar tests con coverage
+        run: |
+          coverage run --source=sai_ultra_pro -m unittest discover -s tests || true
+      - name: Generar reporte de cobertura
+        run: |
+          coverage report -m
+          coverage xml
+      - name: Subir reporte de cobertura como artefacto
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage.xml
+      - name: Subir cobertura a Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: coverage.xml
+          flags: python
+          fail_ci_if_error: false
+
+      # Cobertura y subida para JavaScript (Jest)
+      - name: Instalar dependencias JS
+        run: |
+          if [ -f package.json ]; then npm install; fi
+      - name: Ejecutar tests JS con cobertura
+        run: |
+          if [ -f package.json ]; then npx jest --coverage; fi
+      - name: Subir cobertura JS a Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: coverage/lcov.info
+          flags: javascript
+          fail_ci_if_error: false
+      - name: Instalar dependencias Node.js
+        run: |
+          npm install
+      - name: Ejecutar tests y cobertura con Jest
+        run: |
+          npx jest --coverage
+      - name: Subir cobertura JS a Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: coverage/lcov.info
+          flags: javascript
+          fail_ci_if_error: false

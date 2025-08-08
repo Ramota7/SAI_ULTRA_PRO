@@ -1,0 +1,28 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "Prueba diaria automática SAI ULTRA PRO",
+			"command": "python sai_ultra_pro/monitor_pruebas_diarias.py",
+			"isBackground": false,
+			"group": "test"
+		}
+		,
+		{
+			"type": "shell",
+			"label": "Healthcheck automático SAI ULTRA PRO",
+			"command": "python sai_ultra_pro/healthcheck.py > logs/healthcheck.log 2>&1",
+			"isBackground": false,
+			"group": "test",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			}
+		}
+	]
+}

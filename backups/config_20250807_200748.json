@@ -1,0 +1,89 @@
+{
+  "api_keys": {
+    "TELEGRAM_BOT_TOKEN": "7790120790:AAFcXdm6KQOMExyG0ER-G0OwKGC6kdkDMgc",
+    "TELEGRAM_CHAT_ID": "6996743842",
+    "BINANCE_API_KEY": "fImwxb0glCQLoAlwsvGJdczl3tDeNlDG6AFzzE5rAbJqfjsa51QjuQMWz5sFrBWc",
+    "BINANCE_API_SECRET": "IibxbFRoDrIJhK4gCSYHvDRwmdmfKdMZck8UTRN9slLCPfJ1wieVDEYbJcAsr4bv",
+    "EXNESS_API_KEY": "195762110",
+    "EXNESS_API_SECRET": "A2508m***",
+    "EXNESS_SERVER": "Exness-MT5Real11",
+    "EXNESS_PLATFORM": "mt5",
+    "NEWSAPI_KEY": "fa8583e8da284692bcb5312e86914564"
+  },
+  "umbral_volatilidad": 0.012,
+  "umbral_volumen": 2.0,
+  "fases": [
+    {
+      "min": 226,
+      "max": 500,
+      "riesgo": 0.01,
+      "estrategias": [
+        "ICT",
+        "Ballena"
+      ]
+    },
+    {
+      "min": 500,
+      "max": 1500,
+      "riesgo": 0.02,
+      "estrategias": [
+        "ICT",
+        "Ballena",
+        "Arbitraje"
+      ]
+    },
+    {
+      "min": 1500,
+      "max": 5000,
+      "riesgo": 0.03,
+      "estrategias": [
+        "ICT",
+        "Ballena"
+      ],
+      "doble_entrada": true
+    },
+    {
+      "min": 5000,
+      "max": 25000,
+      "riesgo": 0.04,
+      "estrategias": [
+        "ICT",
+        "Ballena",
+        "Arbitraje"
+      ],
+      "prioridad_ia": true
+    },
+    {
+      "min": 25000,
+      "max": 100000,
+      "riesgo": 0.05,
+      "estrategias": [
+        "ICT",
+        "Ballena",
+        "Arbitraje"
+      ],
+      "arbitraje_spread": 0.007
+    },
+    {
+      "min": 100000,
+      "max": 1000000,
+      "riesgo": 0.07,
+      "estrategias": [
+        "ICT",
+        "Ballena",
+        "Arbitraje"
+      ],
+      "ultra_validacion": true
+    }
+  ],
+  "modo_observacion": false,
+  "umbral_ia": 0.6,
+  "riesgo_base": 0.01,
+  "sensibilidad_ajuste": 0.05,
+  "umbral_acc_bajo": 0.5,
+  "umbral_acc_alto": 0.65,
+  "umbral_drawdown": 0.1,
+  "umbral_racha_neg": -2,
+  "umbral_racha_pos": 3,
+  "umbral_racha_perdidas": 2
+}

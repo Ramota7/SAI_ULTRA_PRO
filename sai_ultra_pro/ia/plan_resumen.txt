@@ -1,0 +1,256 @@
+
+
+📊 [RESUMEN CICLO] 2025-07-28 23:15
+Capital: $226.00
+Ganancia: $0.00 (+0.00%) 💰
+Fase: 1
+Winrate: 66.7%
+Score IA: 0.75
+Profit Factor: 1.60
+Brokers operativos: Binance
+Volatilidad: 1.00
+Tamaño operación: 2.85
+Racha actual: - (0)
+Drawdown actual: 0.00% ⚠️
+Media ganancia/op: $0.00
+
+[HORARIO] Solo Binance (Exness cerrado)
+[OPERACIÓN] Ejecutada en Binance.
+[BINANCE] Orden long ejecutada a las 23:15 ✅
+------------------------------------------------------------
+
+
+📊 [RESUMEN CICLO] 2025-07-29 09:00
+Capital: $226.00
+Ganancia: $0.00 (+0.00%) 💰
+Fase: 1
+Winrate: 66.7%
+Score IA: 0.75
+Profit Factor: 1.60
+Brokers operativos: Binance
+Volatilidad: 1.00
+Tamaño operación: 2.85
+Racha actual: - (0)
+Drawdown actual: 0.00% ⚠️
+Media ganancia/op: $0.00
+
+[HORARIO] Operando ETHUSDT en Binance
+[OPERACIÓN] Ejecutada en Binance (ETHUSDT).
+[BINANCE] ETHUSDT Orden long ejecutada a las 09:00 ✅
+------------------------------------------------------------
+
+
+📊 [RESUMEN CICLO] 2025-07-29 09:15
+Capital: $226.00
+Ganancia: $0.00 (+0.00%) 💰
+Fase: 1
+Winrate: 66.7%
+Score IA: 0.75
+Profit Factor: 1.60
+Brokers operativos: Binance
+Volatilidad: 1.00
+Tamaño operación: 2.85
+Racha actual: - (0)
+Drawdown actual: 0.00% ⚠️
+Media ganancia/op: $0.00
+
+[HORARIO] Operando ETHUSDT en Binance
+[OPERACIÓN] Ejecutada en Binance (ETHUSDT).
+[BINANCE] ETHUSDT Orden long ejecutada a las 09:15 ✅
+------------------------------------------------------------
+
+
+📊 [RESUMEN CICLO] 2025-07-29 09:30
+Capital: $226.00
+Ganancia: $0.00 (+0.00%) 💰
+Fase: 1
+Winrate: 66.7%
+Score IA: 0.75
+Profit Factor: 1.60
+Brokers operativos: Binance
+Volatilidad: 1.00
+Tamaño operación: 2.85
+Racha actual: - (0)
+Drawdown actual: 0.00% ⚠️
+Media ganancia/op: $0.00
+
+[HORARIO] Operando ETHUSDT en Binance
+[OPERACIÓN] Ejecutada en Binance (ETHUSDT).
+[BINANCE] ETHUSDT Orden long ejecutada a las 09:30 ✅
+------------------------------------------------------------
+
+
+📊 [RESUMEN CICLO] 2025-07-29 10:15
+Capital: $226.00
+Ganancia: $0.00 (+0.00%) 💰
+Fase: 1
+Winrate: 66.7%
+Score IA: 0.75
+Profit Factor: 1.60
+Brokers operativos: Binance
+Mercado: BTCUSDT
+Volatilidad: 1.00
+Tamaño operación: 2.85
+Capital protegido: $0.00
+Racha actual: - (0)
+Drawdown actual: 0.00% ⚠️
+Media ganancia/op: $0.00
+
+[HORARIO] Operando BTCUSDT en Binance
+[OPERACIÓN] Ejecutada en Binance (BTCUSDT).
+[BINANCE] BTCUSDT Orden long ejecutada a las 10:15 ✅
+------------------------------------------------------------
+
+
+📊 [RESUMEN CICLO] 2025-07-29 10:30
+Capital: $226.00
+Ganancia: $0.00 (+0.00%) 💰
+Fase: 1
+Winrate: 66.7%
+Score IA: 0.75
+Profit Factor: 1.60
+Brokers operativos: Binance
+Mercado: BTCUSDT
+Volatilidad: 1.00
+Tamaño operación: 2.85
+Capital protegido: $0.00
+Racha actual: - (0)
+Drawdown actual: 0.00% ⚠️
+Media ganancia/op: $0.00
+
+[HORARIO] Operando BTCUSDT en Binance
+[OPERACIÓN] Ejecutada en Binance (BTCUSDT).
+[BINANCE] BTCUSDT Orden long ejecutada a las 10:30 ✅
+------------------------------------------------------------
+
+
+📊 [RESUMEN CICLO] 2025-07-29 11:00
+Capital: $226.00
+Ganancia: $0.00 (+0.00%) 💰
+Fase: 1
+Winrate: 66.7%
+Score IA: 0.75
+Profit Factor: 1.60
+Brokers operativos: Binance
+Mercado: BTCUSDT
+Volatilidad: 1.00
+Tamaño operación: 2.85
+Capital protegido: $0.00
+Racha actual: - (0)
+Drawdown actual: 0.00% ⚠️
+Media ganancia/op: $0.00
+
+[HORARIO] Operando BTCUSDT en Binance
+[OPERACIÓN] Ejecutada en Binance (BTCUSDT).
+[BINANCE] BTCUSDT Orden long ejecutada a las 11:00 ✅
+------------------------------------------------------------
+
+
+📊 [RESUMEN CICLO] 2025-07-29 11:30
+Capital: $226.00
+Ganancia: $0.00 (+0.00%) 💰
+Fase: 1
+Winrate: 66.7%
+Score IA: 0.75
+Profit Factor: 1.60
+Brokers operativos: Binance
+Mercado: BTCUSDT
+Volatilidad: 1.00
+Tamaño operación: 2.85
+Capital protegido: $0.00
+Racha actual: - (0)
+Drawdown actual: 0.00% ⚠️
+Media ganancia/op: $0.00
+
+[HORARIO] Operando BTCUSDT en Binance
+[OPERACIÓN] Ejecutada en Binance (BTCUSDT).
+[BINANCE] BTCUSDT Orden long ejecutada a las 11:30 ✅
+------------------------------------------------------------
+
+
+📊 [RESUMEN CICLO] 2025-07-29 11:45
+Capital: $226.00
+Ganancia: $0.00 (+0.00%) 💰
+Fase: 1
+Winrate: 66.7%
+Score IA: 0.75
+Profit Factor: 1.60
+Brokers operativos: Binance
+Mercado: BTCUSDT
+Volatilidad: 1.00
+Tamaño operación: 2.85
+Capital protegido: $0.00
+Racha actual: - (0)
+Drawdown actual: 0.00% ⚠️
+Media ganancia/op: $0.00
+
+[HORARIO] Operando BTCUSDT en Binance
+[OPERACIÓN] Ejecutada en Binance (BTCUSDT).
+[BINANCE] BTCUSDT Orden long ejecutada a las 11:45 ✅
+------------------------------------------------------------
+
+
+📊 [RESUMEN CICLO] 2025-07-29 12:00
+Capital: $226.00
+Ganancia: $0.00 (+0.00%) 💰
+Fase: 1
+Winrate: 66.7%
+Score IA: 0.75
+Profit Factor: 1.60
+Brokers operativos: Binance
+Mercado: BTCUSDT
+Volatilidad: 1.00
+Tamaño operación: 2.85
+Capital protegido: $0.00
+Racha actual: - (0)
+Drawdown actual: 0.00% ⚠️
+Media ganancia/op: $0.00
+
+[HORARIO] Operando BTCUSDT en Binance
+[OPERACIÓN] Ejecutada en Binance (BTCUSDT).
+[BINANCE] BTCUSDT Orden long ejecutada a las 12:00 ✅
+------------------------------------------------------------
+
+
+📊 [RESUMEN CICLO] 2025-07-29 12:15
+Capital: $226.00
+Ganancia: $0.00 (+0.00%) 💰
+Fase: 1
+Winrate: 66.7%
+Score IA: 0.75
+Profit Factor: 1.60
+Brokers operativos: Binance
+Mercado: BTCUSDT
+Volatilidad: 1.00
+Tamaño operación: 2.85
+Capital protegido: $0.00
+Racha actual: - (0)
+Drawdown actual: 0.00% ⚠️
+Media ganancia/op: $0.00
+
+[HORARIO] Operando BTCUSDT en Binance
+[OPERACIÓN] Ejecutada en Binance (BTCUSDT).
+[BINANCE] BTCUSDT Orden long ejecutada a las 12:15 ✅
+------------------------------------------------------------
+
+
+📊 [RESUMEN CICLO] 2025-07-29 12:30
+Capital: $226.00
+Ganancia: $0.00 (+0.00%) 💰
+Fase: 1
+Winrate: 66.7%
+Score IA: 0.75
+Profit Factor: 1.60
+Brokers operativos: Binance
+Mercado: BTCUSDT
+Volatilidad: 1.00
+Tamaño operación: 2.85
+Capital protegido: $0.00
+Racha actual: - (0)
+Drawdown actual: 0.00% ⚠️
+Media ganancia/op: $0.00
+
+[HORARIO] Operando BTCUSDT en Binance
+[OPERACIÓN] Ejecutada en Binance (BTCUSDT).
+[BINANCE] BTCUSDT Orden long ejecutada a las 12:30 ✅
+------------------------------------------------------------
