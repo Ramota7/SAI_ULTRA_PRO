@@ -1,0 +1,17 @@
+{
+  "mode": "REAL",
+  "risk_per_trade": 0.0025,
+  "max_positions": 2,
+  "limits": {
+    "daily": 0.015,
+    "weekly": 0.035,
+    "monthly": 0.06
+  },
+  "kill_switch": {
+    "slippage": 3.0,
+    "slippage_mode": "LIMIT_ONLY",
+    "slippage_duration_h": 48,
+    "latency_ms": 500,
+    "latency_duration_min": 5
+  }
+}
