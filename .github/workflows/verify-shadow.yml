@@ -1,0 +1,45 @@
+name: Verify shadow artifacts (Windows)
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch: {}   # para lanzarlo manualmente
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: write
+
+jobs:
+  verify-shadow:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r .github/requirements-verify-shadow.txt
+
+      - name: Run verification
+        shell: pwsh
+        run: |
+          mkdir artifacts 2>$null
+          python .github/scripts/verify_shadow.py
+          # el script debe escribir artifacts\verdict.json
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: shadow-artifacts
+          path: artifacts/*
