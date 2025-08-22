@@ -3,8 +3,14 @@ name: SAI_UNICORNIO CI
 on:
   push:
     branches: [ main, master ]
+    # avoid running legacy CI when only workflows change
+    paths-ignore:
+      - '.github/**'
   pull_request:
     branches: [ main, master ]
+    # avoid running legacy CI when only workflows change
+    paths-ignore:
+      - '.github/**'
 
 jobs:
   build-and-test:
