@@ -7,7 +7,8 @@ from __future__ import annotations
 import subprocess, sys, json, argparse
 from pathlib import Path
 
-ROOT = Path(r"C:\Proyectos\SAI_ULTRA_PRO II")
+import os
+ROOT = Path(os.environ.get('GITHUB_WORKSPACE', '.')).resolve()
 
 def run_cmd(args, env=None):
     p = subprocess.run(args, capture_output=True, text=True, env=env)
