@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   verify-shadow:
-    runs-on: windows-latest
+    runs-on: windows-2022
     timeout-minutes: 10
     permissions:
       contents: read
@@ -46,26 +46,20 @@ jobs:
           if (-Not (Test-Path backup_manifest.json)) {
             Write-Output "backup_manifest.json missing, creating minimal test artifacts for verify run"
             New-Item -ItemType Directory -Path artifacts -Force | Out-Null
-            # minimal exchange_status
             '{"p95_ms": 100}' | Out-File artifacts\exchange_status.json -Encoding utf8
-            # minimal coverage CSV with 15 rows
             $rows = @()
             $syms = 'BTCUSDT','ETHUSDT','SOLUSDT','XRPUSDT','BNBUSDT'
             $tfs = '15m','1h','4h'
             foreach ($s in $syms) { foreach ($t in $tfs) { $rows += "$s,$t,2025-08-22T00:00:00Z,10,1" } }
             $rows | Out-File artifacts\coverage_por_combo_v7_5_fixed.csv -Encoding utf8
             '{"artifact_signature": {"zip": "AUDITORIA_SOMBRA_MASTER_v7.5.fixed.zip", "sha256": "dummysha" }, "h5_model_backup": {"path": "artifacts/dummy.h5", "sha256": "dummyh5sha", "restore_dry_run": "OK"}}' | Out-File backup_manifest.json -Encoding utf8
-            # create dummy files referenced
             New-Item artifacts\dummy.h5 -ItemType File -Force | Out-Null
-            # create dummy zip and a .sha256 file matching content
             $zipPath = 'AUDITORIA_SOMBRA_MASTER_v7.5.fixed.zip'
             New-Item $zipPath -ItemType File -Force | Out-Null
             "dummysha" | Out-File ($zipPath + '.sha256') -Encoding utf8
-            # archive logs and last_rotate
             New-Item -ItemType Directory -Path sai_ultra_pro\ia\archive -Force | Out-Null
             "candidate log" | Out-File sai_ultra_pro\ia\archive\candidates.1.log.gz -Encoding utf8
             "2025-08-22T00:00:00Z" | Out-File sai_ultra_pro\ia\last_rotate.txt -Encoding utf8
-            # supervisor token file
             New-Item -ItemType Directory -Path sai_ultra_pro\config -Force | Out-Null
             "'dummy-supervisor-token'" | Out-File sai_ultra_pro\config\.supervisor_token.ps1 -Encoding utf8
           } else {
@@ -75,10 +69,7 @@ jobs:
       - name: Run shadow verification (safe read-only)
         shell: pwsh
         run: |
-          # no external secrets, no network services opened; read-only validations
-          # run the CI script and capture its final JSON line into artifacts/verdict.json
           $out = & python .\scripts\ci_verify_strict.py 2>&1 | Tee-Object -Variable lines
-          # extract last line that looks like JSON
           $json = ($lines | Where-Object { $_ -match '^{.*}$' } | Select-Object -Last 1)
           if ($json) {
             New-Item -ItemType Directory -Path artifacts -Force | Out-Null
@@ -93,6 +84,87 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: shadow-artifacts
+          path: |
+            artifacts/coverage_por_combo_v7_5_fixed.csv
+            artifacts/coverage_matrix_v7.csv
+            artifacts/exchange_status.json
+            backup_manifest.json
+            artifacts/attestation_v7_5.fixed.json
+            artifacts/verdict.json
+
+  verify-shadow-2025:
+    runs-on: windows-2025
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dev requirements (if present)
+        shell: pwsh
+        run: |
+          if (Test-Path requirements-dev.txt) { python -m pip install -r requirements-dev.txt }
+
+      - name: Workspace debug
+        shell: pwsh
+        run: |
+          Write-Output "Python:"; python -V
+          Write-Output "Listing workspace"; Get-ChildItem -Force
+
+      - name: Ensure minimal artifacts present (only if missing)
+        shell: pwsh
+        run: |
+          if (-Not (Test-Path backup_manifest.json)) {
+            Write-Output "backup_manifest.json missing, creating minimal test artifacts for verify run"
+            New-Item -ItemType Directory -Path artifacts -Force | Out-Null
+            '{"p95_ms": 100}' | Out-File artifacts\exchange_status.json -Encoding utf8
+            $rows = @()
+            $syms = 'BTCUSDT','ETHUSDT','SOLUSDT','XRPUSDT','BNBUSDT'
+            $tfs = '15m','1h','4h'
+            foreach ($s in $syms) { foreach ($t in $tfs) { $rows += "$s,$t,2025-08-22T00:00:00Z,10,1" } }
+            $rows | Out-File artifacts\coverage_por_combo_v7_5_fixed.csv -Encoding utf8
+            '{"artifact_signature": {"zip": "AUDITORIA_SOMBRA_MASTER_v7.5.fixed.zip", "sha256": "dummysha" }, "h5_model_backup": {"path": "artifacts/dummy.h5", "sha256": "dummyh5sha", "restore_dry_run": "OK"}}' | Out-File backup_manifest.json -Encoding utf8
+            New-Item artifacts\dummy.h5 -ItemType File -Force | Out-Null
+            $zipPath = 'AUDITORIA_SOMBRA_MASTER_v7.5.fixed.zip'
+            New-Item $zipPath -ItemType File -Force | Out-Null
+            "dummysha" | Out-File ($zipPath + '.sha256') -Encoding utf8
+            New-Item -ItemType Directory -Path sai_ultra_pro\ia\archive -Force | Out-Null
+            "candidate log" | Out-File sai_ultra_pro\ia\archive\candidates.1.log.gz -Encoding utf8
+            "2025-08-22T00:00:00Z" | Out-File sai_ultra_pro\ia\last_rotate.txt -Encoding utf8
+            New-Item -ItemType Directory -Path sai_ultra_pro\config -Force | Out-Null
+            "'dummy-supervisor-token'" | Out-File sai_ultra_pro\config\.supervisor_token.ps1 -Encoding utf8
+          } else {
+            Write-Output "backup_manifest.json exists; skipping artifact mock"
+          }
+
+      - name: Run shadow verification (safe read-only)
+        shell: pwsh
+        run: |
+          $out = & python .\scripts\ci_verify_strict.py 2>&1 | Tee-Object -Variable lines
+          $json = ($lines | Where-Object { $_ -match '^{.*}$' } | Select-Object -Last 1)
+          if ($json) {
+            New-Item -ItemType Directory -Path artifacts -Force | Out-Null
+            $json | Out-File -FilePath artifacts\verdict.json -Encoding utf8
+            Write-Output "Wrote artifacts\verdict.json"
+          } else {
+            Write-Output "No JSON verdict found in output"
+          }
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shadow-artifacts-2025
           path: |
             artifacts/coverage_por_combo_v7_5_fixed.csv
             artifacts/coverage_matrix_v7.csv
