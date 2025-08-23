@@ -26,6 +26,18 @@ jobs:
           persist-credentials: true
           submodules: false
 
+      # 🔧 CI-only: evita el warning "No url found for submodule path ... in .gitmodules"
+      - name: Sanitize .gitmodules (CI-only)
+        shell: pwsh
+        run: |
+          $sub = 'auditoria_shadow_backup_20250820T140441'
+          @"
+          [submodule "$sub"]
+            path = $sub
+            url  = https://example.invalid/empty.git
+          "@ | Out-File .gitmodules -Encoding utf8
+          Write-Output "Wrote minimal .gitmodules for $sub"
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -137,6 +149,18 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
           submodules: false
+
+      # 🔧 CI-only: evita el mismo warning en el job 2025
+      - name: Sanitize .gitmodules (CI-only)
+        shell: pwsh
+        run: |
+          $sub = 'auditoria_shadow_backup_20250820T140441'
+          @"
+          [submodule "$sub"]
+            path = $sub
+            url  = https://example.invalid/empty.git
+          "@ | Out-File .gitmodules -Encoding utf8
+          Write-Output "Wrote minimal .gitmodules for $sub"
 
       - name: Setup Python
         uses: actions/setup-python@v4
