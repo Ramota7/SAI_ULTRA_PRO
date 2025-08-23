@@ -1,6 +1,7 @@
 
-import requests
 import json
+from sai_ultra_pro.net.http import post
+
 
 def enviar_alerta(mensaje):
     try:
@@ -17,10 +18,13 @@ def enviar_alerta(mensaje):
         if len(mensaje_str) > 4000:
             mensaje_str = mensaje_str[:3990] + "... [truncado]"
         data = {"chat_id": chat_id, "text": mensaje_str}
-        r = requests.post(url, data=data)
-        if r.status_code == 200:
-            print(f"[TELEGRAM] Mensaje enviado: {mensaje_str}")
-        else:
-            print(f"[TELEGRAM] Error al enviar mensaje: {r.text}")
+        try:
+            r = post(url, data=data)
+            if r.status_code == 200:
+                print(f"[TELEGRAM] Mensaje enviado: {mensaje_str}")
+            else:
+                print(f"[TELEGRAM] Error al enviar mensaje: {r.text}")
+        except Exception as e:
+            print(f"[TELEGRAM] Error al enviar (http wrapper): {e}")
     except Exception as e:
         print(f"[TELEGRAM] Excepción: {e}")

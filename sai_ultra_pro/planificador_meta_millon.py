@@ -84,7 +84,7 @@ from main import (
     obtener_capital_binance, obtener_capital_exness
 )
 from ia.analizador_volatilidad import AnalizadorVolatilidad
-from integracion.telegram_alertas import enviar_alerta
+from sai_ultra_pro.integracion.telegram_alertas import enviar_alerta
 
 def cargar_metricas():
     try:
@@ -149,7 +149,7 @@ def gestion_riesgo_adaptativa(fase, capital, score_ia, volatilidad, drawdown, ra
 
 def validar_entorno_robusto():
     try:
-        from integracion.filtro_noticias import hay_evento_macro
+        from sai_ultra_pro.integracion.filtro_noticias import hay_evento_macro
         macro = False
         try:
             macro = hay_evento_macro()
@@ -191,7 +191,7 @@ def validar_liquidez_y_spread():
 
 def filtro_noticias_criticas():
     try:
-        from integracion.filtro_noticias import hay_evento_macro
+        from sai_ultra_pro.integracion.filtro_noticias import hay_evento_macro
         return hay_evento_macro()
     except Exception:
         return False
@@ -205,7 +205,7 @@ def alertar_desvio_metricas(winrate, profit_factor, drawdown, notificar_telegram
     if drawdown > 0.07:
         alerta += '\n⚠️ Drawdown elevado: {:.2f}%'.format(drawdown*100)
     if alerta and notificar_telegram:
-        from integracion.telegram_alertas import enviar_alerta
+        from sai_ultra_pro.integracion.telegram_alertas import enviar_alerta
         enviar_alerta('[ALERTA DESVÍO MÉTRICAS]' + alerta)
 
 def ejecutar_plan_maestro():
@@ -305,7 +305,7 @@ def ejecutar_plan_maestro():
 
     def alerta_telegram(msg):
         try:
-            from integracion.telegram_alertas import enviar_alerta
+            from sai_ultra_pro.integracion.telegram_alertas import enviar_alerta
             enviar_alerta(msg)
         except Exception:
             pass
@@ -449,7 +449,7 @@ def ejecutar_plan_maestro():
                     from datetime import datetime
                     flog.write(f"{datetime.now():%Y-%m-%d %H:%M} | [PROTECCIÓN] Drawdown excedido. Bloqueando operaciones.\n")
                 try:
-                    from integracion.telegram_alertas import enviar_alerta
+                    from sai_ultra_pro.integracion.telegram_alertas import enviar_alerta
                     enviar_alerta("⚠️ Drawdown excedido. Sistema bloqueado.")
                 except Exception:
                     pass
@@ -560,7 +560,7 @@ def ejecutar_plan_maestro():
             flog.write(f"{datetime.now():%Y-%m-%d %H:%M} | [PROTECCIÓN] 3 pérdidas seguidas. Bloqueando operaciones y revisando estrategia.\n")
         # Enviar alerta Telegram
         try:
-            from integracion.telegram_alertas import enviar_alerta
+            from sai_ultra_pro.integracion.telegram_alertas import enviar_alerta
             enviar_alerta("⚠️ 3 pérdidas seguidas. Estrategia bloqueada para revisión.")
         except Exception:
             pass
@@ -593,7 +593,7 @@ def ejecutar_plan_maestro():
     def alerta_stop_out(margen_libre, capital):
         if margen_libre < capital * 0.05:
             try:
-                from integracion.telegram_alertas import enviar_alerta
+                from sai_ultra_pro.integracion.telegram_alertas import enviar_alerta
                 enviar_alerta(f"⚠️ Riesgo de Stop Out: margen libre {margen_libre:.2f} USDT, capital {capital:.2f} USDT")
             except Exception:
                 pass
@@ -1252,7 +1252,7 @@ def ejecutar_plan_maestro():
                 capital_protegido_fase.append(capital_protegido_dinamico)
                 # Registrar en Google Sheets (simulado)
                 try:
-                    from integracion.google_dashboard import registrar_operacion
+                    from sai_ultra_pro.integracion.google_dashboard import registrar_operacion
                     registrar_operacion({'evento':'FASE','fase':fase,'capital':capital,'capital_protegido':capital_protegido_dinamico,'fecha':now.strftime('%Y-%m-%d')})
                 except Exception:
                     pass

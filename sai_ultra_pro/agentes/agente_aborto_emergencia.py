@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from integracion.telegram_alertas import enviar_alerta
+from sai_ultra_pro.integracion.telegram_alertas import enviar_alerta
 
 class AgenteAbortoEmergencia:
     """

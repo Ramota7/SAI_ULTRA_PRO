@@ -1,7 +1,7 @@
 {
   "api_keys": {
-    "TELEGRAM_BOT_TOKEN": "7790120790:AAFcXdm6KQOMExyG0ER-G0OwKGC6kdkDMgc",
-    "TELEGRAM_CHAT_ID": "6996743842",
+    "TELEGRAM_BOT_TOKEN": "",
+    "TELEGRAM_CHAT_ID": "",
     "BINANCE_API_KEY": "fImwxb0glCQLoAlwsvGJdczl3tDeNlDG6AFzzE5rAbJqfjsa51QjuQMWz5sFrBWc",
     "BINANCE_API_SECRET": "IibxbFRoDrIJhK4gCSYHvDRwmdmfKdMZck8UTRN9slLCPfJ1wieVDEYbJcAsr4bv",
     "EXNESS_API_KEY": "195762110",
@@ -76,7 +76,7 @@
       "ultra_validacion": true
     }
   ],
-  "modo_observacion": false,
+  "modo_observacion": true,
   "umbral_ia": 0.6,
   "riesgo_base": 0.01,
   "sensibilidad_ajuste": 0.05,
