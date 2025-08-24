@@ -1,7 +1,7 @@
 import time
 import json
 from datetime import datetime
-from integracion.telegram_alertas import enviar_alerta
+from sai_ultra_pro.integracion.telegram_alertas import enviar_alerta
 from main import validar_api_binance, validar_api_exness
 from ia.analizador_volatilidad import AnalizadorVolatilidad
 from ia.analizador_volatilidad_exness import AnalizadorVolatilidadExness
