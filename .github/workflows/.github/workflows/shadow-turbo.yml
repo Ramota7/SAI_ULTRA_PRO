@@ -1,0 +1,193 @@
+name: Shadow Turbo
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ "shadow_hardening" ]
+    paths:
+      - 'sai_ultra_pro/**'
+      - 'scripts/**'
+      - '.github/workflows/**'
+
+concurrency:
+  group: shadow-turbo-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  turbo-2022:
+    name: Turbo (windows-2022)
+    runs-on: windows-2022
+    timeout-minutes: 6
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - name: Sanear submódulos huérfanos (no-failing)
+        run: |
+          git submodule deinit --all 2>$null || true
+          git clean -fd 2>$null || true
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip (no instala por defecto; evita latencia si se añade install)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Preparar entorno (no red por defecto)
+        run: |
+          echo "TEST_NO_NETWORK=1" >> $GITHUB_ENV
+          echo "TEST_FAST=1" >> $GITHUB_ENV
+
+      - name: Run shadow verification (safe read-only)
+        id: run_verify
+        run: |
+          # medir tiempo
+          $t0 = Get-Date
+          Write-Host "Ejecutando tests unitarios (modo seguro)..."
+          try {
+            python -m unittest -q sai_ultra_pro.orders.test_gateway sai_ultra_pro.orders.test_safe_order
+            $tests_ok = $true
+          } catch {
+            Write-Host "Unit tests fallaron: $_"
+            $tests_ok = $false
+          }
+          $t1 = Get-Date
+          $duration = ($t1 - $t0).TotalSeconds
+          # intentar leer p95_ms desde artifacts/exchange_status.json si existe
+          $p95 = $null
+          if (Test-Path artifacts/exchange_status.json) {
+            try {
+              $js = Get-Content artifacts/exchange_status.json -Raw | ConvertFrom-Json
+              $p95 = $js.p95_ms
+            } catch { $p95 = $null }
+          }
+          # generar verdict.json (obligatorio)
+          if ($tests_ok) {
+            $v = @{ verdict = "OK"; tests = "unit_ok"; details = @{ duration_s = $duration } }
+          } else {
+            $v = @{ verdict = "FAIL"; tests = "unit_fail"; details = @{ duration_s = $duration } }
+          }
+          $v | ConvertTo-Json -Depth 5 | Out-File -Encoding utf8 verdict.json
+          # generar perf.json
+          $perf = @{ duration_s = $duration; p95_ms = $p95; timestamp = (Get-Date).ToString("o") }
+          $perf | ConvertTo-Json | Out-File -Encoding utf8 perf.json
+
+          # Assert: si no existe verdict.json -> error (defensivo)
+          if (-not (Test-Path verdict.json)) { Write-Error "verdict.json missing"; exit 1 }
+
+          # Verificar duración total (puedes ajustar límite)
+          if ($duration -gt 30) {
+            Write-Error "Duration exceeded 30s: $duration"
+            # fallamos si la política exige <=30s
+            exit 1
+          }
+
+      - name: Mostrar verdict & perf
+        run: |
+          Write-Host "=== verdict.json ==="
+          Get-Content verdict.json -Raw
+          Write-Host "=== perf.json ==="
+          Get-Content perf.json -Raw
+
+      - name: Upload artifacts (verdict + perf)
+        uses: actions/upload-artifact@v4
+        with:
+          name: shadow-turbo-${{ runner.os }}
+          path: |
+            verdict.json
+            perf.json
+          retention-days: 7
+
+  turbo-2025:
+    name: Turbo (windows-2025)
+    runs-on: windows-2025
+    timeout-minutes: 6
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - name: Sanear submódulos huérfanos (no-failing)
+        run: |
+          git submodule deinit --all 2>$null || true
+          git clean -fd 2>$null || true
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Preparar entorno (no red por defecto)
+        run: |
+          echo "TEST_NO_NETWORK=1" >> $GITHUB_ENV
+          echo "TEST_FAST=1" >> $GITHUB_ENV
+
+      - name: Run shadow verification (safe read-only)
+        id: run_verify_2025
+        run: |
+          $t0 = Get-Date
+          try {
+            python -m unittest -q sai_ultra_pro.orders.test_gateway sai_ultra_pro.orders.test_safe_order
+            $tests_ok = $true
+          } catch {
+            Write-Host "Unit tests fallaron: $_"
+            $tests_ok = $false
+          }
+          $t1 = Get-Date
+          $duration = ($t1 - $t0).TotalSeconds
+          $p95 = $null
+          if (Test-Path artifacts/exchange_status.json) {
+            try {
+              $js = Get-Content artifacts/exchange_status.json -Raw | ConvertFrom-Json
+              $p95 = $js.p95_ms
+            } catch { $p95 = $null }
+          }
+          if ($tests_ok) {
+            @{ verdict = "OK"; tests = "unit_ok"; details = @{ duration_s = $duration } } | ConvertTo-Json -Depth 5 | Out-File -Encoding utf8 verdict.json
+          } else {
+            @{ verdict = "FAIL"; tests = "unit_fail"; details = @{ duration_s = $duration } } | ConvertTo-Json -Depth 5 | Out-File -Encoding utf8 verdict.json
+          }
+          @{ duration_s = $duration; p95_ms = $p95; timestamp = (Get-Date).ToString("o") } | ConvertTo-Json | Out-File -Encoding utf8 perf.json
+
+          if (-not (Test-Path verdict.json)) { Write-Error "verdict.json missing"; exit 1 }
+          if ($duration -gt 30) { Write-Error "Duration exceeded 30s: $duration"; exit 1 }
+
+      - name: Mostrar verdict & perf
+        run: |
+          Write-Host "=== verdict.json ==="
+          Get-Content verdict.json -Raw
+          Write-Host "=== perf.json ==="
+          Get-Content perf.json -Raw
+
+      - name: Upload artifacts (verdict + perf)
+        uses: actions/upload-artifact@v4
+        with:
+          name: shadow-turbo-${{ runner.os }}
+          path: |
+            verdict.json
+            perf.json
+          retention-days: 7
