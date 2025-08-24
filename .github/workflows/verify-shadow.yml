@@ -34,7 +34,7 @@ jobs:
       - name: Install dev requirements (if present)
         shell: pwsh
         run: |
-          if (Test-Path requirements-dev.txt) { python -m pip install -r requirements-dev.txt }
+          if (Test-Path requirements-dev.clean.txt) { python -m pip install -r requirements-dev.clean.txt } elseif (Test-Path requirements-dev.txt) { python -m pip install -r requirements-dev.txt }
 
       - name: Workspace debug
         shell: pwsh
@@ -135,10 +135,12 @@ jobs:
 
       - name: Install dev requirements (if present)
         run: |
-          if [ -f requirements-dev.txt ]; then
+          if [ -f requirements-dev.clean.txt ]; then
+            python -m pip install -r requirements-dev.clean.txt
+          elif [ -f requirements-dev.txt ]; then
             python -m pip install -r requirements-dev.txt
           else
-            echo "requirements-dev.txt not found; skipping"
+            echo "no requirements-dev file found; skipping"
           fi
 
       - name: Run gateway unit tests (safe)
@@ -206,7 +208,7 @@ jobs:
       - name: Install dev requirements (if present)
         shell: pwsh
         run: |
-          if (Test-Path requirements-dev.txt) { python -m pip install -r requirements-dev.txt }
+          if (Test-Path requirements-dev.clean.txt) { python -m pip install -r requirements-dev.clean.txt } elseif (Test-Path requirements-dev.txt) { python -m pip install -r requirements-dev.txt }
 
       - name: Workspace debug
         shell: pwsh
