@@ -140,6 +140,41 @@ jobs:
         run: |
           python -m unittest -q sai_ultra_pro.orders.test_gateway sai_ultra_pro.orders.test_safe_order
 
+  finalize-verdict:
+    name: Finalize verdict and produce final artifact
+    runs-on: ubuntu-latest
+    needs: [unit-gateway, verify-shadow, verify-shadow-2025]
+    if: always()
+    env:
+      VERDICT_P95_THRESHOLD: '200'
+      UNIT_GATEWAY_RESULT: ${{ needs.unit-gateway.result }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download verify artifacts (windows-2022)
+        uses: actions/download-artifact@v4
+        with:
+          name: shadow-artifacts
+          path: shadow-artifacts
+
+      - name: Download verify artifacts (windows-2025)
+        uses: actions/download-artifact@v4
+        with:
+          name: shadow-artifacts-2025
+          path: shadow-artifacts-2025
+
+      - name: Compute final verdict
+        run: |
+          python .github/scripts/finalize_verdict.py
+
+      - name: Upload final verdict artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-verdict
+          path: artifacts/verdict.json
+
   verify-shadow-2025:
     runs-on: windows-2025
     timeout-minutes: 10
