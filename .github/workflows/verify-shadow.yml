@@ -147,7 +147,12 @@ jobs:
         env:
           TEST_NO_NETWORK: '1'
           TEST_FAST: '1'
+        env:
+          PYTHONPATH: tests/stubs:$PYTHONPATH
+          TEST_NO_NETWORK: '1'
+          TEST_FAST: '1'
         run: |
+          echo "Using PYTHONPATH=$PYTHONPATH"
           python -m unittest -q sai_ultra_pro.orders.test_gateway sai_ultra_pro.orders.test_safe_order
 
   finalize-verdict:
