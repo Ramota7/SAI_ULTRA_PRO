@@ -106,6 +106,9 @@ from sai_ultra_pro.estrategias.arbitraje_oculto import ArbitrajeOculto
 from sai_ultra_pro.ia.analizador_volatilidad import AnalizadorVolatilidad
 from sai_ultra_pro.gestion.gestor_riesgo_fases import GestorRiesgoFases
 from sai_ultra_pro.integracion.telegram_alertas import enviar_alerta
+from sai_ultra_pro.safety import allow_real_trades
+from sai_ultra_pro.orders.gateway import order_allowed, record_order_result, get_status
+from sai_ultra_pro.orders.safe_order import send_order as safe_send_order
 from sai_ultra_pro.integracion.google_dashboard import registrar_operacion
 
 def obtener_capital_binance(api_key, api_secret):
@@ -170,7 +173,9 @@ def obtener_capital_exness(api_key, api_secret):
 
 
 # --- MODO OBSERVACIÓN ---
-MODO_OBSERVACION = False  # Cambia a True para solo observar
+# Por seguridad, MODO_OBSERVACION se deriva de la variable de entorno
+# ALLOW_REAL_TRADES: si no está explícitamente permitida, operar en observación.
+MODO_OBSERVACION = not allow_real_trades()
 
 
 # --- ORDEN REAL BINANCE ---
@@ -190,6 +195,15 @@ def enviar_orden_binance(api_key, api_secret, simbolo, cantidad):
     if not simbolo or not isinstance(simbolo, str):
         print("[BINANCE][ORDEN COMPRA] Símbolo inválido.")
         return None
+    # Comprobar circuit breaker por par/broker
+    try:
+        if not order_allowed('binance', simbolo):
+            msg = f"[CB][BINANCE] Circuit breaker abierto para {simbolo}; orden bloqueada"
+            print(msg)
+            return None
+    except Exception:
+        # si falla el gateway no bloquear la orden por seguridad
+        pass
     try:
         cantidad = float(cantidad)
         if cantidad <= 0:
@@ -209,6 +223,7 @@ def enviar_orden_binance(api_key, api_secret, simbolo, cantidad):
         print(msg)
         with open('sai_ultra_pro/ia/plan_log.txt', 'a', encoding='utf-8') as flog:
             flog.write(f"{datetime.now():%Y-%m-%d %H:%M} | {msg}\n")
+
         if status == 'FILLED':
             resumen = f"[BINANCE][ORDEN COMPRA FILLED] {simbolo} {qty_filled} a precio promedio {precio_prom}"
             try:
@@ -216,6 +231,12 @@ def enviar_orden_binance(api_key, api_secret, simbolo, cantidad):
                 enviar_alerta(resumen)
             except Exception:
                 pass
+
+        # registrar éxito/fallo en circuit breaker
+        try:
+            record_order_result('binance', simbolo, True)
+        except Exception:
+            pass
         return orden
     except BinanceAPIException as e:
         err_msg = f"[BINANCE][ORDEN COMPRA][ERROR] {e.status_code} {e.message}"
@@ -225,6 +246,10 @@ def enviar_orden_binance(api_key, api_secret, simbolo, cantidad):
         try:
             from sai_ultra_pro.integracion.telegram_alertas import enviar_alerta
             enviar_alerta(err_msg)
+        except Exception:
+            pass
+        try:
+            record_order_result('binance', simbolo, False)
         except Exception:
             pass
         return None
@@ -251,6 +276,13 @@ def enviar_orden_venta_binance(api_key, api_secret, simbolo, cantidad):
         print("[BINANCE][ORDEN VENTA] Símbolo inválido.")
         return None
     try:
+        if not order_allowed('binance', simbolo):
+            msg = f"[CB][BINANCE] Circuit breaker abierto para {simbolo}; orden de venta bloqueada"
+            print(msg)
+            return None
+    except Exception:
+        pass
+    try:
         cantidad = float(cantidad)
         if cantidad <= 0:
             print("[BINANCE][ORDEN VENTA] Cantidad debe ser mayor a 0.")
@@ -276,6 +308,10 @@ def enviar_orden_venta_binance(api_key, api_secret, simbolo, cantidad):
                 enviar_alerta(resumen)
             except Exception:
                 pass
+        try:
+            record_order_result('binance', simbolo, True)
+        except Exception:
+            pass
         return orden
     except BinanceAPIException as e:
         err_msg = f"[BINANCE][ORDEN VENTA][ERROR] {e.status_code} {e.message}"
@@ -285,6 +321,10 @@ def enviar_orden_venta_binance(api_key, api_secret, simbolo, cantidad):
         try:
             from integracion.telegram_alertas import enviar_alerta
             enviar_alerta(err_msg)
+        except Exception:
+            pass
+        try:
+            record_order_result('binance', simbolo, False)
         except Exception:
             pass
         return None
@@ -300,6 +340,13 @@ def ejecutar_orden_exness(señal, size, api_key, api_secret, server=None, platfo
     import MetaTrader5 as mt5
     from datetime import datetime
     from sai_ultra_pro.integracion.google_dashboard import registrar_operacion
+    try:
+        if not order_allowed('exness', symbol or ''):
+            msg = f"[CB][EXNESS] Circuit breaker abierto para {symbol}; orden bloqueada"
+            print(msg)
+            return False
+    except Exception:
+        pass
     if MODO_OBSERVACION:
         print(f"[OBSERVACIÓN][EXNESS] Señal: {señal} Tamaño: {size}")
         return True
@@ -472,7 +519,8 @@ def ciclo():
             api_binance_secret = config.get('api_keys', {}).get('binance_secret', '')
             simbolo = activo['symbol']
             cantidad = 0.01 if simbolo == 'ETHUSDT' else 0.001 if simbolo == 'BTCUSDT' else 1
-            enviar_orden_binance(api_binance, api_binance_secret, simbolo, cantidad)
+            # usar wrapper seguro
+            safe_send_order('binance', 'buy', simbolo, cantidad, api_key=api_binance, api_secret=api_binance_secret)
             # Simulación de posición abierta (puedes adaptar a tu lógica real)
             global posicion_abierta
             posicion_abierta = {'simbolo': simbolo, 'cantidad': cantidad}
@@ -488,7 +536,8 @@ def ciclo():
             api_binance_secret = config.get('api_keys', {}).get('binance_secret', '')
             simbolo = posicion_abierta['simbolo']
             cantidad = posicion_abierta['cantidad']
-            enviar_orden_venta_binance(api_binance, api_binance_secret, simbolo, cantidad)
+            # usar wrapper seguro para cierre
+            safe_send_order('binance', 'sell', simbolo, cantidad, api_key=api_binance, api_secret=api_binance_secret)
             posicion_abierta = None
     except Exception as e:
         print(f"[BINANCE][ORDEN VENTA][ERROR] Error al cerrar posición: {e}")
@@ -699,10 +748,20 @@ def main():
                 else:
                     shutil.copy(modelo_path, modelo_backup)
                 enviar_alerta(resumen_telegram)
-                time.sleep(600)  # Espera 10 minutos entre ciclos
+                # Espera 10 minutos entre ciclos en producción.
+                # Si TEST_FAST está activo usamos 0.1s para acelerar pruebas.
+                import os
+                if os.getenv('TEST_FAST'):
+                    time.sleep(0.1)
+                else:
+                    time.sleep(600)  # Espera 10 minutos entre ciclos
             except Exception as e:
                 enviar_alerta(f'[AUTO] Error en reentrenamiento automático: {e}')
-                time.sleep(600)
+                import os
+                if os.getenv('TEST_FAST'):
+                    time.sleep(0.1)
+                else:
+                    time.sleep(600)
     hilo_reentrenamiento = threading.Thread(target=reentrenar_modelo_automatico, daemon=True)
     hilo_reentrenamiento.start()
 
@@ -836,6 +895,27 @@ def main():
 
 def main():
     # --- Reentrenamiento automático semanal del modelo IA ---
+
+    # --- IP Gate preflight: evita arrancar si la IP pública cambió ---
+    try:
+        from sai_ultra_pro.integracion.telegram_alertas import enviar_alerta
+    except Exception:
+        enviar_alerta = None
+    try:
+        from sai_ultra_pro.ip_gate import run_preflight_and_block_if_needed, TELEMETRY_FILE
+        ok_ip = run_preflight_and_block_if_needed(telegram_send=(lambda m: enviar_alerta(m)) if enviar_alerta else None)
+        # escribir estado en telemetry global si existe
+        try:
+            t = json.loads(TELEMETRY_FILE.read_text(encoding='utf-8')) if TELEMETRY_FILE.exists() else {}
+            t.update({'ip_gate_active': True, 'ip_detected': t.get('ip_detected'), 'ip_gate_status': 'OK' if ok_ip else 'BLOCKED'})
+            TELEMETRY_FILE.write_text(json.dumps(t, ensure_ascii=False, indent=2), encoding='utf-8')
+        except Exception:
+            pass
+        if not ok_ip:
+            print('[IP_GATE] Startup blocked due to IP gate. Exiting.')
+            return
+    except Exception as e:
+        print(f'[IP_GATE] Preflight skipped due to error: {e}')
 
     def reentrenar_modelo_automatico():
         # Stub seguro: en entorno de tests no queremos ejecutar reentrenamiento pesado.

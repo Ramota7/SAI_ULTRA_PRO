@@ -108,6 +108,40 @@ verdict = {
                          and last_rotate and (p95 is not None and abs(float(p95)) <= 2000)) else "WARN",
 }
 
+# Augment with ip_gate telemetry if present (informational only)
+try:
+    tele_path = ROOT / 'sai_ultra_pro' / 'telemetry' / 'ip_gate.json'
+    if tele_path.exists():
+        tele = json.loads(tele_path.read_text(encoding='utf-8'))
+        verdict.update({
+            'ip_gate_active': bool(tele.get('ip_gate_active', False)),
+            'ip_detected': tele.get('ip_detected'),
+            'ip_gate_status': tele.get('ip_gate_status', 'UNKNOWN'),
+            'ip_gate_first_seen_ts': tele.get('ip_gate_first_seen_ts'),
+            'ip_gate_last_unblock_ts': tele.get('ip_gate_last_unblock_ts'),
+            'ip_gate_retries': int(tele.get('ip_gate_retries', 0)),
+            'ip_gate_timeout_s': int(tele.get('ip_gate_timeout_s', 0)) if tele.get('ip_gate_timeout_s') else None,
+            'ip_gate_bypass': bool(tele.get('ip_gate_bypass', False)),
+            'ip_gate_sources': tele.get('ip_gate_sources', []),
+            'allowlist_check_ok': bool(tele.get('allowlist_check_ok', False)),
+        })
+    else:
+        verdict.update({
+            'ip_gate_active': False,
+            'ip_detected': None,
+            'ip_gate_status': 'UNKNOWN',
+            'ip_gate_first_seen_ts': None,
+            'ip_gate_last_unblock_ts': None,
+            'ip_gate_retries': 0,
+            'ip_gate_timeout_s': None,
+            'ip_gate_bypass': False,
+            'ip_gate_sources': [],
+            'allowlist_check_ok': False,
+        })
+except Exception:
+    # best-effort: don't fail verification if telemetry parsing fails
+    verdict.setdefault('ip_gate_active', False)
+
 out = ART / "verdict.json"
 out.write_text(json.dumps(verdict, ensure_ascii=False, indent=2), encoding="utf-8")
 print(json.dumps(verdict, ensure_ascii=False))  # aparece en logs

@@ -1,0 +1,1 @@
+{"artifact_signature": {"zip": "AUDITORIA_SOMBRA_MASTER_v7.5.fixed.zip", "sha256": "dummysha" }, "h5_model_backup": {"path": "artifacts/dummy.h5", "sha256": "dummyh5sha", "restore_dry_run": "OK"}}

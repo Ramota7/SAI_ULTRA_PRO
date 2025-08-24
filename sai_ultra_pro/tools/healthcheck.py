@@ -51,11 +51,13 @@ def check_host():
 
 
 def ping_binance():
-    import requests
-    url = 'https://api.binance.com/api/v3/time'
-    t0 = time.time()
     try:
-        r = requests.get(url, timeout=5)
+        from sai_ultra_pro.net.http import get as http_get, is_network_allowed
+        if not is_network_allowed():
+            return {'ok': False, 'error': 'network_disabled_by_env'}
+        url = 'https://api.binance.com/api/v3/time'
+        t0 = time.time()
+        r = http_get(url, timeout=5)
         latency = round((time.time() - t0) * 1000, 2)
         return {'ok': r.status_code == 200, 'latency_ms': latency}
     except Exception as e:
@@ -69,9 +71,11 @@ def telegram_test(msg):
     if not token or not chat:
         return {'sent': False, 'reason': 'no_token_or_chat'}
     try:
-        import requests
+        from sai_ultra_pro.net.http import post as http_post, is_network_allowed
+        if not is_network_allowed():
+            return {'sent': False, 'reason': 'network_disabled_by_env'}
         url = f'https://api.telegram.org/bot{token}/sendMessage'
-        r = requests.post(url, data={'chat_id': chat, 'text': msg}, timeout=5)
+        r = http_post(url, data={'chat_id': chat, 'text': msg}, timeout=5)
         return {'sent': r.status_code == 200, 'status_code': r.status_code, 'text': r.text}
     except Exception as e:
         return {'sent': False, 'error': str(e)}

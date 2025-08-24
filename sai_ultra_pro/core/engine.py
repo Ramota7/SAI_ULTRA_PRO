@@ -51,5 +51,10 @@ class Engine:
 			except Exception:
 				# No dejar que un error en un ciclo detenga el engine en producción.
 				pass
-			# Pausa entre ciclos; los tests parchean time.sleep para salir.
+		# Pausa entre ciclos; los tests parchean time.sleep para salir.
+		# Si TEST_FAST está activo, reducir la espera para acelerar pruebas.
+		import os
+		if os.getenv('TEST_FAST'):
+			time.sleep(0.01)
+		else:
 			time.sleep(1)
