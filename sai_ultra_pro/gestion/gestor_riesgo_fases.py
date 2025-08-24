@@ -1,6 +1,6 @@
 
 import json
-from integracion.telegram_alertas import enviar_alerta
+from sai_ultra_pro.integracion.telegram_alertas import enviar_alerta
 
 class GestorRiesgoFases:
     def __init__(self, fase_actual, capital, porcentaje_riesgo):

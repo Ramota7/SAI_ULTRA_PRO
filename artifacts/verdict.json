@@ -1,0 +1,21 @@
+{
+  "coverage_ok": false,
+  "coverage_2h_count": 0,
+  "drift_p95_ms": null,
+  "backup_restore_ok": true,
+  "zip_sha_ok": false,
+  "archive_count": 0,
+  "last_rotate_ts": null,
+  "supervisor_fp": null,
+  "verdict": "WARN",
+  "ip_gate_active": false,
+  "ip_detected": null,
+  "ip_gate_status": "UNKNOWN",
+  "ip_gate_first_seen_ts": null,
+  "ip_gate_last_unblock_ts": null,
+  "ip_gate_retries": 0,
+  "ip_gate_timeout_s": null,
+  "ip_gate_bypass": false,
+  "ip_gate_sources": [],
+  "allowlist_check_ok": false
+}

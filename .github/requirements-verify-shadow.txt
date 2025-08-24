@@ -1,0 +1,1 @@
+# empty – verify_shadow.py uses only Python stdlib

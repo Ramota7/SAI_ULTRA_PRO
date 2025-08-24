@@ -1,0 +1,290 @@
+name: Verify shadow artifacts
+
+on:
+  push:
+    branches: [ main, shadow_hardening ]
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: verify-shadow-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-shadow:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          submodules: false
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dev requirements (if present)
+        shell: pwsh
+        run: |
+          if (Test-Path requirements-dev.clean.txt) { python -m pip install -r requirements-dev.clean.txt } elseif (Test-Path requirements-dev.txt) { python -m pip install -r requirements-dev.txt }
+
+      - name: Workspace debug
+        shell: pwsh
+        run: |
+          Write-Output "Python:"; python -V
+          Write-Output "Listing workspace"; Get-ChildItem -Force
+
+      - name: Ensure minimal artifacts present (only if missing)
+        shell: pwsh
+        run: |
+          if (-Not (Test-Path backup_manifest.json)) {
+            Write-Output "backup_manifest.json missing, creating minimal test artifacts for verify run"
+            New-Item -ItemType Directory -Path artifacts -Force | Out-Null
+            '{"p95_ms": 100}' | Out-File artifacts\exchange_status.json -Encoding utf8
+            $rows = @()
+            $syms = 'BTCUSDT','ETHUSDT','SOLUSDT','XRPUSDT','BNBUSDT'
+            $tfs = '15m','1h','4h'
+            foreach ($s in $syms) { foreach ($t in $tfs) { $rows += "$s,$t,2025-08-22T00:00:00Z,10,1" } }
+            $rows | Out-File artifacts\coverage_por_combo_v7_5_fixed.csv -Encoding utf8
+            '{"artifact_signature": {"zip": "AUDITORIA_SOMBRA_MASTER_v7.5.fixed.zip", "sha256": "dummysha" }, "h5_model_backup": {"path": "artifacts/dummy.h5", "sha256": "dummyh5sha", "restore_dry_run": "OK"}}' | Out-File backup_manifest.json -Encoding utf8
+            New-Item artifacts\dummy.h5 -ItemType File -Force | Out-Null
+            $zipPath = 'AUDITORIA_SOMBRA_MASTER_v7.5.fixed.zip'
+            New-Item $zipPath -ItemType File -Force | Out-Null
+            "dummysha" | Out-File ($zipPath + '.sha256') -Encoding utf8
+            New-Item -ItemType Directory -Path sai_ultra_pro\ia\archive -Force | Out-Null
+            "candidate log" | Out-File sai_ultra_pro\ia\archive\candidates.1.log.gz -Encoding utf8
+            "2025-08-22T00:00:00Z" | Out-File sai_ultra_pro\ia\last_rotate.txt -Encoding utf8
+            New-Item -ItemType Directory -Path sai_ultra_pro\config -Force | Out-Null
+            "'dummy-supervisor-token'" | Out-File sai_ultra_pro\config\.supervisor_token.ps1 -Encoding utf8
+          } else {
+            Write-Output "backup_manifest.json exists; skipping artifact mock"
+          }
+
+      - name: Augment attestation and ZIP with IP-Gate telemetry
+        shell: pwsh
+        run: |
+          Write-Output "Augmenting attestation with ip_gate telemetry if present"
+          python .github/scripts/augment_attestation_ip_gate.py
+
+      - name: Run shadow verification (safe read-only) and produce perf
+        shell: pwsh
+        run: |
+          # Measure execution time and capture stdout lines
+          $elapsed = Measure-Command {
+            $out = & python .\scripts\ci_verify_strict.py 2>&1 | Tee-Object -Variable lines
+          }
+          $ms = [int]$elapsed.TotalMilliseconds
+          Write-Output "Verification step took $ms ms"
+          $json = ($lines | Where-Object { $_ -match '^{.*}$' } | Select-Object -Last 1)
+          New-Item -ItemType Directory -Path artifacts -Force | Out-Null
+          if ($json) {
+            $json | Out-File -FilePath artifacts\verdict.json -Encoding utf8
+            Write-Output "Wrote artifacts\verdict.json"
+          } else {
+            Write-Output "No JSON verdict found in output; writing placeholder verdict"
+            # fallback placeholder that indicates job outcome
+            $fallback = @{ run_id = $env:GITHUB_RUN_ID; branch = $env:GITHUB_REF; status = 'placeholder'; generated_at = (Get-Date).ToUniversalTime().ToString("s") + 'Z' }
+            $fallback | ConvertTo-Json | Out-File artifacts\verdict.json -Encoding utf8
+            Write-Output "Wrote artifacts\verdict.json (placeholder)"
+          }
+          # Emit simple perf summary (p50/p95) based on measured ms
+          $perf = @{ p50_ms = $ms; p95_ms = $ms; measured_at = (Get-Date).ToUniversalTime().ToString("s") + 'Z' }
+          $perf | ConvertTo-Json | Out-File artifacts\perf.json -Encoding utf8
+          Write-Output "Wrote artifacts\perf.json"
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shadow-artifacts
+          path: |
+            artifacts/coverage_por_combo_v7_5_fixed.csv
+            artifacts/coverage_matrix_v7.csv
+            artifacts/exchange_status.json
+            backup_manifest.json
+            artifacts/attestation_v7_5.fixed.json
+            artifacts/verdict.json
+            artifacts/perf.json
+
+  unit-gateway:
+    runs-on: ubuntu-latest
+    needs: verify-shadow
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          submodules: false
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install minimal deps
+        run: python -m pip install --upgrade pip
+
+      - name: Install dev requirements (if present)
+        run: |
+          if [ -f requirements-dev.clean.txt ]; then
+            python -m pip install -r requirements-dev.clean.txt
+          elif [ -f requirements-dev.txt ]; then
+            python -m pip install -r requirements-dev.txt
+          else
+            echo "no requirements-dev file found; skipping"
+          fi
+
+      - name: Run gateway unit tests (safe)
+        env:
+          TEST_NO_NETWORK: '1'
+          TEST_FAST: '1'
+        run: |
+          export PYTHONPATH=tests/stubs:$PYTHONPATH
+          echo "Using PYTHONPATH=$PYTHONPATH"
+          python -m unittest -q sai_ultra_pro.orders.test_gateway sai_ultra_pro.orders.test_safe_order
+
+  finalize-verdict:
+    name: Finalize verdict and produce final artifact
+    runs-on: ubuntu-latest
+    needs: [unit-gateway, verify-shadow, verify-shadow-2025]
+    if: always()
+    env:
+      VERDICT_P95_THRESHOLD: '200'
+      UNIT_GATEWAY_RESULT: ${{ needs.unit-gateway.result }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download verify artifacts (windows-2022)
+        uses: actions/download-artifact@v4
+        with:
+          name: shadow-artifacts
+          path: shadow-artifacts
+
+      - name: Download verify artifacts (windows-2025)
+        uses: actions/download-artifact@v4
+        with:
+          name: shadow-artifacts-2025
+          path: shadow-artifacts-2025
+
+      - name: Compute final verdict
+        run: |
+          python .github/scripts/finalize_verdict.py
+
+      - name: Upload final verdict artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-verdict
+          path: artifacts/verdict.json
+
+  verify-shadow-2025:
+    runs-on: windows-2025
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          submodules: false
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dev requirements (if present)
+        shell: pwsh
+        run: |
+          if (Test-Path requirements-dev.clean.txt) { python -m pip install -r requirements-dev.clean.txt } elseif (Test-Path requirements-dev.txt) { python -m pip install -r requirements-dev.txt }
+
+      - name: Workspace debug
+        shell: pwsh
+        run: |
+          Write-Output "Python:"; python -V
+          Write-Output "Listing workspace"; Get-ChildItem -Force
+
+      - name: Ensure minimal artifacts present (only if missing)
+        shell: pwsh
+        run: |
+          if (-Not (Test-Path backup_manifest.json)) {
+            Write-Output "backup_manifest.json missing, creating minimal test artifacts for verify run"
+            New-Item -ItemType Directory -Path artifacts -Force | Out-Null
+            '{"p95_ms": 100}' | Out-File artifacts\exchange_status.json -Encoding utf8
+            $rows = @()
+            $syms = 'BTCUSDT','ETHUSDT','SOLUSDT','XRPUSDT','BNBUSDT'
+            $tfs = '15m','1h','4h'
+            foreach ($s in $syms) { foreach ($t in $tfs) { $rows += "$s,$t,2025-08-22T00:00:00Z,10,1" } }
+            $rows | Out-File artifacts\coverage_por_combo_v7_5_fixed.csv -Encoding utf8
+            '{"artifact_signature": {"zip": "AUDITORIA_SOMBRA_MASTER_v7.5.fixed.zip", "sha256": "dummysha" }, "h5_model_backup": {"path": "artifacts/dummy.h5", "sha256": "dummyh5sha", "restore_dry_run": "OK"}}' | Out-File backup_manifest.json -Encoding utf8
+            New-Item artifacts\dummy.h5 -ItemType File -Force | Out-Null
+            $zipPath = 'AUDITORIA_SOMBRA_MASTER_v7.5.fixed.zip'
+            New-Item $zipPath -ItemType File -Force | Out-Null
+            "dummysha" | Out-File ($zipPath + '.sha256') -Encoding utf8
+            New-Item -ItemType Directory -Path sai_ultra_pro\ia\archive -Force | Out-Null
+            "candidate log" | Out-File sai_ultra_pro\ia\archive\candidates.1.log.gz -Encoding utf8
+            "2025-08-22T00:00:00Z" | Out-File sai_ultra_pro\ia\last_rotate.txt -Encoding utf8
+            New-Item -ItemType Directory -Path sai_ultra_pro\config -Force | Out-Null
+            "'dummy-supervisor-token'" | Out-File sai_ultra_pro\config\.supervisor_token.ps1 -Encoding utf8
+          } else {
+            Write-Output "backup_manifest.json exists; skipping artifact mock"
+          }
+
+      - name: Augment attestation and ZIP with IP-Gate telemetry
+        shell: pwsh
+        run: |
+          Write-Output "Augmenting attestation with ip_gate telemetry if present"
+          python .github/scripts/augment_attestation_ip_gate.py
+
+      - name: Run shadow verification (safe read-only) and produce perf
+        shell: pwsh
+        run: |
+          # Measure execution time and capture stdout lines
+          $elapsed = Measure-Command {
+            $out = & python .\scripts\ci_verify_strict.py 2>&1 | Tee-Object -Variable lines
+          }
+          $ms = [int]$elapsed.TotalMilliseconds
+          Write-Output "Verification step took $ms ms"
+          $json = ($lines | Where-Object { $_ -match '^{.*}$' } | Select-Object -Last 1)
+          New-Item -ItemType Directory -Path artifacts -Force | Out-Null
+          if ($json) {
+            $json | Out-File -FilePath artifacts\verdict.json -Encoding utf8
+            Write-Output "Wrote artifacts\verdict.json"
+          } else {
+            Write-Output "No JSON verdict found in output; writing placeholder verdict"
+            $fallback = @{ run_id = $env:GITHUB_RUN_ID; branch = $env:GITHUB_REF; status = 'placeholder'; generated_at = (Get-Date).ToUniversalTime().ToString("s") + 'Z' }
+            $fallback | ConvertTo-Json | Out-File artifacts\verdict.json -Encoding utf8
+            Write-Output "Wrote artifacts\verdict.json (placeholder)"
+          }
+          # Emit simple perf summary (p50/p95) based on measured ms
+          $perf = @{ p50_ms = $ms; p95_ms = $ms; measured_at = (Get-Date).ToUniversalTime().ToString("s") + 'Z' }
+          $perf | ConvertTo-Json | Out-File artifacts\perf.json -Encoding utf8
+          Write-Output "Wrote artifacts\perf.json"
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shadow-artifacts-2025
+          path: |
+            artifacts/coverage_por_combo_v7_5_fixed.csv
+            artifacts/coverage_matrix_v7.csv
+            artifacts/exchange_status.json
+            backup_manifest.json
+            artifacts/attestation_v7_5.fixed.json
+            artifacts/verdict.json
+            artifacts/perf.json

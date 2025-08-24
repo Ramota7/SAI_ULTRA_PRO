@@ -3,15 +3,25 @@ name: SAI_UNICORNIO CI
 on:
   push:
     branches: [ main, master ]
+    # avoid running legacy CI when only workflows change
+    paths-ignore:
+      - '.github/**'
   pull_request:
     branches: [ main, master ]
+    # avoid running legacy CI when only workflows change
+    paths-ignore:
+      - '.github/**'
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: windows-2022
     steps:
       - name: Checkout código
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          submodules: false
       - name: Configurar Python
         uses: actions/setup-python@v4
         with:

@@ -5,6 +5,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 # Script de test para disparar todas las alertas Telegram en orden
 from sai_ultra_pro.integracion.telegram_alertas import enviar_alerta
 import time
+import os
+
 
 def test_alertas_telegram():
     mensajes = [
@@ -28,10 +30,14 @@ def test_alertas_telegram():
         "💳 Saldo insuficiente para operar",
         "🌐 Problemas de conexión al broker o latencia alta"
     ]
+    # En entorno de CI/local lento la prueba puede tomar >3s; para pruebas rápidas
+    # activar ENV TEST_FAST=1 para reducir sleeps a 0.01s.
+    fast = os.environ.get('TEST_FAST', '') == '1'
+    sleep_sec = 0.01 if fast else 1
     for msg in mensajes:
         print(f"Enviando alerta: {msg}")
         enviar_alerta(msg)
-        time.sleep(1)  # Pausa para evitar flood
+        time.sleep(sleep_sec)  # Pausa para evitar flood
 
 if __name__ == "__main__":
     test_alertas_telegram()
