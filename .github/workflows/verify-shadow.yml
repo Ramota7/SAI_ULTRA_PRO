@@ -74,18 +74,31 @@ jobs:
           Write-Output "Augmenting attestation with ip_gate telemetry if present"
           python .github/scripts/augment_attestation_ip_gate.py
 
-      - name: Run shadow verification (safe read-only)
+      - name: Run shadow verification (safe read-only) and produce perf
         shell: pwsh
         run: |
-          $out = & python .\scripts\ci_verify_strict.py 2>&1 | Tee-Object -Variable lines
+          # Measure execution time and capture stdout lines
+          $elapsed = Measure-Command {
+            $out = & python .\scripts\ci_verify_strict.py 2>&1 | Tee-Object -Variable lines
+          }
+          $ms = [int]$elapsed.TotalMilliseconds
+          Write-Output "Verification step took $ms ms"
           $json = ($lines | Where-Object { $_ -match '^{.*}$' } | Select-Object -Last 1)
+          New-Item -ItemType Directory -Path artifacts -Force | Out-Null
           if ($json) {
-            New-Item -ItemType Directory -Path artifacts -Force | Out-Null
             $json | Out-File -FilePath artifacts\verdict.json -Encoding utf8
             Write-Output "Wrote artifacts\verdict.json"
           } else {
-            Write-Output "No JSON verdict found in output"
+            Write-Output "No JSON verdict found in output; writing placeholder verdict"
+            # fallback placeholder that indicates job outcome
+            $fallback = @{ run_id = $env:GITHUB_RUN_ID; branch = $env:GITHUB_REF; status = 'placeholder'; generated_at = (Get-Date).ToUniversalTime().ToString("s") + 'Z' }
+            $fallback | ConvertTo-Json | Out-File artifacts\verdict.json -Encoding utf8
+            Write-Output "Wrote artifacts\verdict.json (placeholder)"
           }
+          # Emit simple perf summary (p50/p95) based on measured ms
+          $perf = @{ p50_ms = $ms; p95_ms = $ms; measured_at = (Get-Date).ToUniversalTime().ToString("s") + 'Z' }
+          $perf | ConvertTo-Json | Out-File artifacts\perf.json -Encoding utf8
+          Write-Output "Wrote artifacts\perf.json"
 
       - name: Upload artifacts
         if: always()
@@ -99,6 +112,7 @@ jobs:
             backup_manifest.json
             artifacts/attestation_v7_5.fixed.json
             artifacts/verdict.json
+            artifacts/perf.json
 
   unit-gateway:
     runs-on: ubuntu-latest
@@ -189,18 +203,30 @@ jobs:
           Write-Output "Augmenting attestation with ip_gate telemetry if present"
           python .github/scripts/augment_attestation_ip_gate.py
 
-      - name: Run shadow verification (safe read-only)
+      - name: Run shadow verification (safe read-only) and produce perf
         shell: pwsh
         run: |
-          $out = & python .\scripts\ci_verify_strict.py 2>&1 | Tee-Object -Variable lines
+          # Measure execution time and capture stdout lines
+          $elapsed = Measure-Command {
+            $out = & python .\scripts\ci_verify_strict.py 2>&1 | Tee-Object -Variable lines
+          }
+          $ms = [int]$elapsed.TotalMilliseconds
+          Write-Output "Verification step took $ms ms"
           $json = ($lines | Where-Object { $_ -match '^{.*}$' } | Select-Object -Last 1)
+          New-Item -ItemType Directory -Path artifacts -Force | Out-Null
           if ($json) {
-            New-Item -ItemType Directory -Path artifacts -Force | Out-Null
             $json | Out-File -FilePath artifacts\verdict.json -Encoding utf8
             Write-Output "Wrote artifacts\verdict.json"
           } else {
-            Write-Output "No JSON verdict found in output"
+            Write-Output "No JSON verdict found in output; writing placeholder verdict"
+            $fallback = @{ run_id = $env:GITHUB_RUN_ID; branch = $env:GITHUB_REF; status = 'placeholder'; generated_at = (Get-Date).ToUniversalTime().ToString("s") + 'Z' }
+            $fallback | ConvertTo-Json | Out-File artifacts\verdict.json -Encoding utf8
+            Write-Output "Wrote artifacts\verdict.json (placeholder)"
           }
+          # Emit simple perf summary (p50/p95) based on measured ms
+          $perf = @{ p50_ms = $ms; p95_ms = $ms; measured_at = (Get-Date).ToUniversalTime().ToString("s") + 'Z' }
+          $perf | ConvertTo-Json | Out-File artifacts\perf.json -Encoding utf8
+          Write-Output "Wrote artifacts\perf.json"
 
       - name: Upload artifacts
         if: always()
@@ -214,3 +240,4 @@ jobs:
             backup_manifest.json
             artifacts/attestation_v7_5.fixed.json
             artifacts/verdict.json
+            artifacts/perf.json
