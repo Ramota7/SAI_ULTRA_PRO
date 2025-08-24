@@ -1,0 +1,47 @@
+name: Promote to Live (canary → live)
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Shadow Turbo"]
+    types: [completed]
+
+jobs:
+  canary:
+    # corre si lo disparas a mano o si Shadow Turbo terminó ok
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment: live-canary
+    steps:
+      - name: Start canary
+        run: echo "Canary for ${{ github.sha }}"
+      - name: Create canary_verdict.json
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          echo '{"status":"ok","source":"canary","commit":"'"${GITHUB_SHA}"'"}' > artifacts/canary_verdict.json
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: canary-artifacts
+          path: artifacts/canary_verdict.json
+          if-no-files-found: error
+
+  promote:
+    needs: canary
+    runs-on: ubuntu-latest
+    environment: live
+    steps:
+      - name: Promote live
+        run: echo "Promote live for ${{ github.sha }}"
+      - name: Create live_verdict.json
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          echo '{"status":"ok","source":"live","commit":"'"${GITHUB_SHA}"'"}' > artifacts/live_verdict.json
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-artifacts
+          path: artifacts/live_verdict.json
+          if-no-files-found: error
